@@ -3,7 +3,12 @@
   "name": "Visor",
   "version": "1.0",
   "description": "visor",
-  "action": {
-    "default_popup": "index.html"
+  "permissions": ["sidePanel"],
+  "action": {},
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }
