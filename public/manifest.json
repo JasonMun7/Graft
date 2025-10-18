@@ -4,6 +4,7 @@
   "version": "1.0",
   "description": "visor",
   "permissions": ["sidePanel"],
+  "host_permissions": ["https://*/*"],
   "action": {},
   "side_panel": {
     "default_path": "index.html"
