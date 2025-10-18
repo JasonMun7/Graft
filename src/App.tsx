@@ -117,43 +117,47 @@ OUTPUT FORMAT:
     "end": { "id": "target-node-id" },
     "label": { "text": "relationship" }
   }
-]
-
-LAYOUT STRATEGY:
-- Use grid layout: columns at x=50, 350, 650, 950
-- Rows at y=50, 250, 450, 650
-- Standard node size: width=250, height=80
-- Space nodes 300px horizontally, 200px vertically
-- Use rectangles for main concepts
-- Use diamonds for decisions/branches
-- Use ellipses for start/end points
-
-RULES:
-- 5-12 total elements (aim for 6-10)
-- Include nodes for major concepts
-- Add arrows to show key relationships/flow
-- Every element needs unique id and label.text
-- Arrows reference node ids in start/end
-- Use meaningful, concise labels (3-8 words)
-- Colors: blue tones for process, green for success, red for errors, yellow for decisions`,
+]`,
       });
 
-      const prompt = `Analyze this text and create a comprehensive flowchart: "${inputText}"
+      
+const prompt = `Analyze this text and create a comprehensive flowchart: "${inputText}"
 
-Create a diagram with:
-- 5-10 nodes (rectangles/diamonds/ellipses) representing key concepts, steps, or decision points
-- 3-7 arrows showing relationships and flow between nodes
 
-Requirements:
-- Each node: unique id, position (grid layout), width=250, height=80, colors, label with text
-- Each arrow: unique id, position, start/end references to node ids, label describing relationship
-- Use appropriate node types:
-  * rectangles: processes, actions, concepts
-  * diamonds: decisions, conditionals, branches
-  * ellipses: start/end points, inputs/outputs
-- Arrange in logical flow (typically left-to-right or top-to-bottom)
-- Include ALL major concepts from the text
-- Show clear relationships with labeled arrows
+### LAYOUT & ARROW RULES
+- Use a clear vertical or grid layout (top-to-bottom flow preferred).
+- Start the first node near (100,100).
+- Node spacing: at least 350px horizontally and 250px vertically.
+- Standard node size: width=250, height=80.
+- Nodes must not overlap; keep visible white space between them.
+- Arrows connect node **centers** to target **centers** with at least 100px padding around nodes.
+- Arrows should generally point downward or rightward (no crossings if possible).
+- Curved arrows are allowed only for feedback loops or cycles.
+- If two arrows overlap, offset one by ~30px for clarity.
+
+### OVERLAP & SPACING CORRECTION
+- After placing all nodes, check for overlaps:
+  - If two nodes are within 150px in x or y, shift one downward or rightward until spacing ≥150px.
+- If the entire diagram appears compressed, multiply all x,y positions by 1.5 to expand spacing.
+
+### STRUCTURAL RULES
+- 5-12 total elements (aim for 6-10).
+- Include nodes for all major concepts or steps.
+- Add arrows showing key relationships or flow.
+- Each node and arrow must have a unique "id" and a "label.text".
+- Arrows must reference node ids correctly in "start" and "end".
+- Use concise, descriptive labels (3-8 words).
+- Node color scheme:
+  - Blue tones = process or general step
+  - Green = success or positive outcome
+  - Red = error, failure, or warning
+  - Yellow = decision or conditional
+- Node types:
+  - Rectangle → processes, actions, or main concepts
+  - Diamond → decisions, conditionals, or branches
+  - Ellipse → start/end points or inputs/outputs
+- Arrange in logical order (top-to-bottom or left-to-right).
+- Include all major ideas from the input text and show clear relationships with labeled arrows.
 
 Focus on completeness while maintaining clarity.`;
 
@@ -258,6 +262,7 @@ Focus on completeness while maintaining clarity.`;
           <Excalidraw
             excalidrawAPI={(api) => setExcalidrawAPI(api)}
             theme="light"
+            // initialData={}
             UIOptions={{
               canvasActions: {
                 loadScene: false,
