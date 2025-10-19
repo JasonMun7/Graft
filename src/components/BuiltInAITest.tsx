@@ -7,7 +7,8 @@ export type APIName =
   | "summarizer"
   | "translator"
   | "languageDetector"
-  | "prompt";
+  | "prompt"
+  | "rewriter";
 
 // Sample texts for APIs
 const SAMPLE_TEXTS = {
@@ -18,6 +19,8 @@ const SAMPLE_TEXTS = {
   languageDetector: `Bonjour, comment allez-vous? Je suis très content de vous rencontrer.`,
 
   prompt: `Explain quantum computing in simple terms that a high school student could understand.`,
+
+  rewriter: `The weather is nice today and I'm feeling good. I think I'll go for a walk in the park and maybe get some ice cream.`,
 };
 
 // Utility function to format API names for display
@@ -73,6 +76,10 @@ const BuiltInAITest: React.FC = () => {
         {
           name: "prompt",
           check: () => LanguageModel.availability(),
+        },
+        {
+          name: "rewriter",
+          check: () => Rewriter.availability(),
         },
       ];
 
@@ -139,6 +146,10 @@ const BuiltInAITest: React.FC = () => {
     sourceLanguage: "en",
     // Language Detector options
     showConfidence: false,
+    // Rewriter options
+    tone: "more-formal" as "more-formal" | "less-formal" | "more-casual",
+    format: "plain-text" as "plain-text" | "markdown",
+    length: "shorter" as "shorter" | "longer",
   });
 
   // API-specific configurations (including Prompt API in origin trial)
@@ -167,6 +178,12 @@ const BuiltInAITest: React.FC = () => {
       description: "General AI interactions with custom prompts (Origin Trial)",
       hasOptions: true,
       sampleText: SAMPLE_TEXTS.prompt,
+    },
+    rewriter: {
+      label: "Rewriter",
+      description: "Rewrite text with different tones and styles",
+      hasOptions: true,
+      sampleText: SAMPLE_TEXTS.rewriter,
     },
   };
 
@@ -225,6 +242,9 @@ const BuiltInAITest: React.FC = () => {
             } else if (apiName === "prompt") {
               const session = await LanguageModel.create();
               if (typeof session.destroy === "function") session.destroy();
+            } else if (apiName === "rewriter") {
+              const session = await Rewriter.create();
+              if (typeof session.destroy === "function") session.destroy();
             }
           } catch (error) {
             console.log("Model download triggered:", error);
@@ -263,6 +283,8 @@ const BuiltInAITest: React.FC = () => {
               newStatus = await LanguageDetector.availability();
             } else if (apiName === "prompt") {
               newStatus = await LanguageModel.availability();
+            } else if (apiName === "rewriter") {
+              newStatus = await Rewriter.availability();
             }
 
             if (newStatus === "available") {
@@ -349,6 +371,12 @@ const BuiltInAITest: React.FC = () => {
           result = await AIAPI.prompt(inputText, {
             temperature: options.temperature,
             topK: options.topK,
+          });
+          break;
+        case "rewriter":
+          result = await AIAPI.rewriter(inputText, {
+            tone: "more-formal",
+            format: "plain-text",
           });
           break;
         default:
@@ -438,9 +466,8 @@ const BuiltInAITest: React.FC = () => {
             {isLoading ? "Checking..." : "Refresh Status"}
           </button>
           <span
-            className={`text-sm ${
-              isUserActivated ? "text-green-600" : "text-red-600"
-            }`}
+            className={`text-sm ${isUserActivated ? "text-green-600" : "text-red-600"
+              }`}
           >
             User Activation: {isUserActivated ? "Active" : "Required"}
           </span>
@@ -460,11 +487,10 @@ const BuiltInAITest: React.FC = () => {
             <button
               key={apiName}
               onClick={() => handleAPISelection(apiName as APIName)}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                selectedAPI === apiName
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+              className={`p-4 rounded-lg border-2 transition-all ${selectedAPI === apiName
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:border-gray-300"
+                }`}
             >
               <div className="text-left">
                 <h4 className="font-semibold text-gray-800">{config.label}</h4>
@@ -709,6 +735,65 @@ const BuiltInAITest: React.FC = () => {
                   </label>
                 </div>
               )}
+              {selectedAPI === "rewriter" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tone
+                    </label>
+                    <select
+                      value={options.tone}
+                      onChange={(e) =>
+                        setOptions((prev) => ({
+                          ...prev,
+                          tone: e.target.value as "more-formal" | "less-formal" | "more-casual",
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="more-formal">More Formal</option>
+                      <option value="less-formal">Less Formal</option>
+                      <option value="more-casual">More Casual</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Format
+                    </label>
+                    <select
+                      value={options.format}
+                      onChange={(e) =>
+                        setOptions((prev) => ({
+                          ...prev,
+                          format: e.target.value as "plain-text" | "markdown",
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="plain-text">Plain Text</option>
+                      <option value="markdown">Markdown</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Length
+                    </label>
+                    <select
+                      value={options.length}
+                      onChange={(e) =>
+                        setOptions((prev) => ({
+                          ...prev,
+                          length: e.target.value as "shorter" | "longer",
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="shorter">Shorter</option>
+                      <option value="longer">Longer</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -726,8 +811,8 @@ const BuiltInAITest: React.FC = () => {
           {isProcessing
             ? "Processing..."
             : !isUserActivated
-            ? `Click to Activate & Test ${currentConfig.label}`
-            : `Test ${currentConfig.label}`}
+              ? `Click to Activate & Test ${currentConfig.label}`
+              : `Test ${currentConfig.label}`}
         </button>
       </div>
 
@@ -787,11 +872,10 @@ const BuiltInAITest: React.FC = () => {
                   <div>
                     <h5 className="font-medium text-gray-700 mb-2">Output:</h5>
                     <div
-                      className={`p-3 rounded border ${
-                        result.error
-                          ? "bg-red-50 border-red-200"
-                          : "bg-green-50 border-green-200"
-                      }`}
+                      className={`p-3 rounded border ${result.error
+                        ? "bg-red-50 border-red-200"
+                        : "bg-green-50 border-green-200"
+                        }`}
                     >
                       {result.error ? (
                         <p className="text-red-800 text-sm">{result.error}</p>

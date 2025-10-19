@@ -60,11 +60,11 @@ declare global {
       initialPrompts?: Array<{
         role: "system" | "user" | "assistant";
         content:
-          | string
-          | Array<{
-              type: "text" | "image" | "audio";
-              value: string | File;
-            }>;
+        | string
+        | Array<{
+          type: "text" | "image" | "audio";
+          value: string | File;
+        }>;
         prefix?: boolean;
       }>;
       expectedInputs?: Array<{
@@ -111,11 +111,11 @@ declare global {
         prompts: Array<{
           role: "user" | "assistant";
           content:
-            | string
-            | Array<{
-                type: "text" | "image" | "audio";
-                value: string | File;
-              }>;
+          | string
+          | Array<{
+            type: "text" | "image" | "audio";
+            value: string | File;
+          }>;
           prefix?: boolean;
         }>
       ): Promise<void>;
@@ -185,7 +185,7 @@ declare global {
 
   // Writer API
   namespace Writer {
-    interface WriterOptions extends BaseAIOptions {}
+    interface WriterOptions extends BaseAIOptions { }
 
     interface WriterSession extends BaseAISession {
       write(input: string, options?: WriterOptions): Promise<string>;
@@ -197,10 +197,34 @@ declare global {
 
   // Rewriter API
   namespace Rewriter {
-    interface RewriterOptions extends BaseAIOptions {}
+    // Options for the rewriter model
+    interface RewriterOptions extends BaseAIOptions {
+      // Specifies the type of rewrite transformation
+      type?:
+      | "shorter"
+      | "longer"
+      | "simpler"
+      | "more_formal"
+      | "less_formal";
+      // Optional context to guide the rewrite (for example, topic or audience)
+      context?: string;
+
+      // Optional progress monitor for model downloads
+      monitor?: (monitor: {
+        addEventListener: (
+          event: "downloadprogress",
+          callback: (e: { loaded: number }) => void
+        ) => void;
+      }) => void;
+    }
 
     interface RewriterSession extends BaseAISession {
       rewrite(input: string, options?: RewriterOptions): Promise<string>;
+      rewriteStreaming(
+        input: string,
+        options?: RewriterOptions
+      ): ReadableStream<string>;
+      destroy(): void;
     }
 
     function availability(): Promise<AIAvailabilityStatus>;
@@ -209,7 +233,7 @@ declare global {
 
   // Proofreader API
   namespace Proofreader {
-    interface ProofreaderOptions extends BaseAIOptions {}
+    interface ProofreaderOptions extends BaseAIOptions { }
 
     interface ProofreaderSession extends BaseAISession {
       proofread(input: string, options?: ProofreaderOptions): Promise<string>;

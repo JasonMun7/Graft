@@ -5,7 +5,8 @@ export type APIName =
   | "summarizer"
   | "translator"
   | "languageDetector"
-  | "prompt";
+  | "prompt"
+  | "rewriter";
 
 //Common error types
 export class AIAPIError extends Error {
@@ -307,6 +308,55 @@ export const AIAPI = {
       );
     }
   },
+
+  async rewriter(
+    text: string,
+    options?: {
+      sharedContext?: string;
+      tone?: "more-formal" | "less-formal" | "more-casual";
+      format?: "plain-text" | "markdown";
+      length?: "shorter" | "longer";
+    }
+  ): Promise<string> {
+    // Map tone and length to valid Rewriter "type" values
+    let rewriteType: "shorter" | "longer" | "simpler" | "more_formal" | "less_formal" | undefined;
+
+    if (options?.length) {
+      rewriteType = options.length;
+    } else if (options?.tone === "more-formal") {
+      rewriteType = "more_formal";
+    } else if (options?.tone === "less-formal" || options?.tone === "more-casual") {
+      rewriteType = "less_formal";
+    } else {
+      rewriteType = "simpler";
+    }
+
+    const defaultOptions: Rewriter.RewriterOptions = {
+      type: rewriteType,
+      context: options?.sharedContext,
+      maxOutputTokens: 256,
+      temperature: 0.7,
+    };
+
+    const sessionId = await sessionManager.createSession("rewriter", () =>
+      Rewriter.create(defaultOptions)
+    );
+
+    try {
+      const session = sessionManager.getSession(sessionId);
+      const result = await session.rewrite(text, defaultOptions);
+      return result;
+    } catch (error) {
+      sessionManager.closeSession(sessionId);
+      throw new AIAPIError(
+        "Failed to rewrite text",
+        "rewriter",
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
+  }
+
+
 };
 
 // Utility functions for common operations
@@ -346,6 +396,9 @@ export const AIUtils = {
         break;
       case "prompt":
         status = await LanguageModel.availability();
+        break;
+      case "rewriter":
+        status = await Rewriter.availability();
         break;
       default:
         throw new AIAPIError(`Unknown API: ${apiName}`, apiName as APIName);
