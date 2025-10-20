@@ -101,6 +101,7 @@ const els = convertToExcalidrawElements([
   },
 ]);
 
+import BuiltInAITest from "./components/BuiltInAITest";
 
 function App() {
   const [inputText, setInputText] = useState("");
@@ -272,9 +273,12 @@ Focus on completeness while maintaining clarity.`;
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <h1 className="text-center text-3xl font-bold text-gray-800 py-6">
-        AI Diagram Generator
+        Visor
       </h1>
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-8 space-y-4">
+        {/* AI Test Section */}
+        <BuiltInAITest />
+        {/* Excalidraw Section */}
         <div className="bg-white p-4 rounded-lg shadow-lg">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Enter text to visualize as a diagram:
