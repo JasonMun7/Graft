@@ -275,7 +275,7 @@ Focus on completeness while maintaining clarity.`;
       <h1 className="text-center text-3xl font-bold text-gray-800 py-6">
         Visor
       </h1>
-      <div className="max-w-6xl mx-auto space-y-8 space-y-4">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* AI Test Section */}
         <BuiltInAITest />
         {/* Excalidraw Section */}
