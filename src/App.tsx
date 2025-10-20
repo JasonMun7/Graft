@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
+import { graph2, graph3 } from "./saved"
 
 // Simplified schema based on convertToExcalidrawElements examples
 const diagramSchema = {
@@ -35,20 +36,71 @@ const diagramSchema = {
         type: "object",
         properties: {
           id: { type: "string" },
-          type: { type: "string" }
+          // type: { type: "string" }
         }
       },
       end: {
         type: "object",
         properties: {
           id: { type: "string" },
-          type: { type: "string" }
+          // type: { type: "string" }
         }
       }
     },
     required: ["type", "x", "y", "label"] // label is required!
   }
 };
+
+const els = convertToExcalidrawElements([
+  {
+    type: "ellipse",
+    id: "ellipse-1",
+    strokeColor: "#66a80f",
+    x: 390,
+    y: 356,
+    width: 150,
+    height: 150,
+    backgroundColor: "#d8f5a2",
+  },
+  {
+    type: "diamond",
+    id: "diamond-1",
+    strokeColor: "#9c36b5",
+    width: 100,
+    x: -30,
+    y: 380,
+  },
+  {
+    type: "arrow",
+    x: 100,
+    y: 440,
+    width: 295,
+    height: 35,
+    strokeColor: "#1864ab",
+    start: {
+      type: "rectangle",
+      width: 150,
+      height: 150,
+    },
+    end: {
+      id: "ellipse-1",
+    },
+  },
+  {
+    type: "arrow",
+    x: 60,
+    y: 420,
+    width: 330,
+    strokeColor: "#e67700",
+    start: {
+      id: "diamond-1",
+    },
+    end: {
+      id: "ellipse-1",
+    },
+  },
+]);
+
 
 function App() {
   const [inputText, setInputText] = useState("");
@@ -125,13 +177,10 @@ const prompt = `Analyze this text and create a comprehensive flowchart: "${input
 
 
 ### LAYOUT & ARROW RULES
-- Use a clear vertical or grid layout (top-to-bottom flow preferred).
 - Start the first node near (100,100).
 - Node spacing: at least 350px horizontally and 250px vertically.
 - Standard node size: width=250, height=80.
 - Nodes must not overlap; keep visible white space between them.
-- Arrows connect node **centers** to target **centers** with at least 100px padding around nodes.
-- Arrows should generally point downward or rightward (no crossings if possible).
 - Curved arrows are allowed only for feedback loops or cycles.
 - If two arrows overlap, offset one by ~30px for clarity.
 
@@ -144,7 +193,6 @@ const prompt = `Analyze this text and create a comprehensive flowchart: "${input
 - 5-12 total elements (aim for 6-10).
 - Include nodes for all major concepts or steps.
 - Add arrows showing key relationships or flow.
-- Each node and arrow must have a unique "id" and a "label.text".
 - Arrows must reference node ids correctly in "start" and "end".
 - Use concise, descriptive labels (3-8 words).
 - Node color scheme:
@@ -199,6 +247,10 @@ Focus on completeness while maintaining clarity.`;
         excalidrawAPI.updateScene({ elements: newElements });
         setTimeout(() => {
           excalidrawAPI.scrollToContent(newElements, { fitToContent: true });
+
+          requestAnimationFrame(() => {
+            window.dispatchEvent(new Event("resize"));
+          });
         }, 100);
       }
       
@@ -251,18 +303,11 @@ Focus on completeness while maintaining clarity.`;
           )}
         </div>
 
-        {debugOutput && (
-          <div className="bg-gray-900 text-green-400 p-4 rounded-lg shadow-lg font-mono text-sm overflow-auto max-h-64">
-            <h4 className="text-white font-bold mb-2">AI Generated JSON ({JSON.parse(debugOutput).length} elements):</h4>
-            <pre>{debugOutput}</pre>
-          </div>
-        )}
-
         <div className="h-[500px] border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden">
           <Excalidraw
             excalidrawAPI={(api) => setExcalidrawAPI(api)}
             theme="light"
-            // initialData={}
+            initialData= {{elements: graph3}}
             UIOptions={{
               canvasActions: {
                 loadScene: false,
@@ -273,6 +318,14 @@ Focus on completeness while maintaining clarity.`;
             }}
           />
         </div>
+
+        {debugOutput && (
+          <div className="bg-gray-900 text-green-400 p-4 rounded-lg shadow-lg font-mono text-sm overflow-auto max-h-64">
+            <h4 className="text-white font-bold mb-2">AI Generated JSON ({JSON.parse(debugOutput).length} elements):</h4>
+            <pre>{debugOutput}</pre>
+          </div>
+        )}
+
       </div>
     </div>
   );
