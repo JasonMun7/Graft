@@ -80,11 +80,14 @@ from PIL import Image as PILImage
 from io import BytesIO
 from pathlib import Path
 import base64, os, re, json, time
+from dotenv import load_dotenv
+
 
 # =========================
 # CONFIG
 # =========================
-API_KEY = os.getenv("GOOGLE_API_KEY") or "AIzaSyAkBxYdEqu9n72z-BAyjnQB7R32ZMqN-IY"  # <-- replace or set env var
+load_dotenv()
+API_KEY = os.getenv("GOOGLE_API_KEY")
 MODEL = "imagen-4.0-generate-001"
 ASPECT_RATIO = "1:1"
 OUTPUT_DIR = Path("gen_images")
