@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { AIAPI, AIUtils } from "../utils/aiAPI";
+import { AIAPI, AIUtils } from "../../utils/aiAPI";
 import ErrorHandler from "./ErrorHandler";
 
 // API names for type safety
