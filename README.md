@@ -117,11 +117,7 @@ Each node in the diagram is linked back to the exact sentence in the source arti
 <!-- GETTING STARTED -->
 ## Getting Started
 
-### Prerequisites
-
-### Installation
-
-1. Get a Gemini API Key from [Google AI Studio](https://aistudio.google.com/api-keys?_gl=1*1qqknxg*_ga*MTQyNzQ5MjEyMS4xNzYxNDQ0NTk4*_ga_P1DBVKWT6V*czE3NjE5Mzg1NjEkbzIkZzEkdDE3NjE5Mzg1OTEkajMwJGwwJGgxNzQ0Njk5Nzcz) if you want to use the image generation feature
+1. Get a Gemini API Key from [Google AI Studio](https://aistudio.google.com/api-keys?_gl=1*1qqknxg*_ga*MTQyNzQ5MjEyMS4xNzYxNDQ0NTk4*_ga_P1DBVKWT6V*czE3NjE5Mzg1NjEkbzIkZzEkdDE3NjE5Mzg1OTEkajMwJGwwJGgxNzQ0Njk5Nzcz) and link to a billing account (not free tier) if you want to use the image generation feature
 2. Clone the repo
    ```sh
    git clone https://github.com/JasonMun7/Graft.git
@@ -132,7 +128,7 @@ Each node in the diagram is linked back to the exact sentence in the source arti
    ```
 4. Create a `.env` file at the root and enter your API key
    ```
-   GEMINI_API_KEY = "ENTER YOUR API"
+   GOOGLE_API_KEY = "ENTER YOUR API"
    ```
 5. Build the extension
    ```sh
@@ -148,6 +144,51 @@ Each node in the diagram is linked back to the exact sentence in the source arti
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+
+### Running the Server Locally
+This is primarily for image generation or other features in the future that may use the backend
+```sh
+npx tsx src/server.ts
+```
+### Core Flow
+1. Go to a website (eg. https://www.britannica.com/science/photosynthesis)
+2. Highlight a paragraph. You have two options:
+   * Click on the blue button
+     <img width="1600" height="408" alt="image" src="https://github.com/user-attachments/assets/eeb6097f-cf11-445a-891f-f3fd9981e9b3" />
+   * Paste the text in the text area and click 'Next'
+     <img width="1910" height="898" alt="image" src="https://github.com/user-attachments/assets/15f3f3e9-bd3d-441b-ba49-2b5dfbe2847b" />
+
+3. Click 'Generate Diagram'
+   <img width="1854" height="560" alt="image" src="https://github.com/user-attachments/assets/8fafae0c-fdf5-452a-b045-26d1b0800aa8" />
+
+4. Customize your diagram
+
+     <img width="1846" height="1358" alt="image" src="https://github.com/user-attachments/assets/9a2935aa-a99a-47b7-8b01-9251d4e0b477" />
+     
+   * Edit the diagram manually in the Canvas
+     <img width="1798" height="1270" alt="image" src="https://github.com/user-attachments/assets/75996c0d-a854-49fe-904e-634710f82160" />
+
+   * Edit the diagram with natural language
+     <img width="1788" height="306" alt="image" src="https://github.com/user-attachments/assets/fb604cd5-f3b8-423c-95a3-7b9090d28913" />
+
+   * Generate supplemental images with Imagen
+     <img width="754" height="486" alt="image" src="https://github.com/user-attachments/assets/dcc66ad6-2bdd-45f6-931b-3ef99a3e65a7" />
+     <img width="1570" height="736" alt="image" src="https://github.com/user-attachments/assets/471a1181-2072-4be4-b86d-e4e097a6f6da" />
+
+   * Summarize your diagram
+     <img width="884" height="562" alt="image" src="https://github.com/user-attachments/assets/3c2d2594-3242-4e3b-a478-704b08e65365" />
+     <img width="1776" height="222" alt="image" src="https://github.com/user-attachments/assets/953295dc-2ecb-4b4f-ad4f-73df915ce3a9" />
+   
+5. Export your diagram
+
+   <img width="676" height="266" alt="image" src="https://github.com/user-attachments/assets/d482337f-1961-4e50-a2f4-4a80e9af9094" />
+   <img width="1066" height="852" alt="image" src="https://github.com/user-attachments/assets/2b842128-b1bf-4f79-89c8-6b0eab470c2d" />
+
+7. Check your history or Create a new diagram
+
+   <img width="222" height="122" alt="image" src="https://github.com/user-attachments/assets/e828a892-33de-48e6-95dc-3f3ae9ee91c2" />
+   <img width="1824" height="1336" alt="image" src="https://github.com/user-attachments/assets/59801754-be7f-4431-a864-8ed059a9f3b6" />
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
