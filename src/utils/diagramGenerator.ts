@@ -1,6 +1,6 @@
 import { AIAPI } from "./aiAPI";
 
-interface DiagramStructure {
+export interface DiagramStructure {
   nodes: Array<{
     id: string;
     label: string;
@@ -121,6 +121,97 @@ export async function generateDiagramFromText(
     console.error("Error generating diagram:", error);
     throw new Error(
       `Failed to generate diagram: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Edit an existing diagram based on a natural language prompt
+ */
+export async function editDiagramFromPrompt(
+  currentDiagram: DiagramStructure,
+  editPrompt: string,
+  sourceText?: string
+): Promise<DiagramStructure> {
+  const prompt = `You are an expert at editing visual diagrams. You have an existing diagram and need to modify it based on the user's request.
+
+Current diagram structure:
+${JSON.stringify(currentDiagram, null, 2)}
+
+${sourceText ? `Original source text for context:\n"""${sourceText}"""\n` : ""}
+
+User's edit request:
+"""
+${editPrompt}
+"""
+
+Your task:
+1. Understand the user's edit request
+2. Modify the diagram accordingly (add nodes, remove nodes, change connections, update labels, etc.)
+3. Maintain consistency with existing node IDs and positions where possible
+4. If adding new nodes, position them logically near related existing nodes
+5. Preserve the overall diagram structure unless explicitly asked to change it
+
+Return ONLY a valid JSON object in this exact format (no markdown, no code blocks, just the JSON):
+
+{
+  "nodes": [
+    {"id": "node1", "label": "Updated Label", "x": 100, "y": 100}
+  ],
+  "edges": [
+    {"from": "node1", "to": "node2", "label": "relationship"}
+  ]
+}
+
+CRITICAL Guidelines:
+- PRESERVE existing node IDs when keeping nodes (don't rename IDs unnecessarily)
+- When removing nodes, also remove all edges connected to them
+- When adding nodes, use new unique IDs (e.g., "node_new_1", "node_new_2")
+- Position new nodes logically (near related nodes, spacing ~250-300px)
+- Keep labels clear and concise (10-25 characters)
+- Maintain the diagram's readability and visual clarity`;
+
+  try {
+    const response = await AIAPI.prompt(prompt, {
+      maxOutputTokens: 2000,
+      temperature: 0.3,
+    });
+
+    // Parse response (same logic as generateDiagramFromText)
+    let jsonString = response.trim();
+    jsonString = jsonString.replace(/```json\n?/g, "");
+    jsonString = jsonString.replace(/```\n?/g, "");
+    jsonString = jsonString.trim();
+
+    let parsed: DiagramStructure;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (e) {
+      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Could not extract valid JSON from AI response");
+      }
+    }
+
+    // Validate structure
+    if (
+      !parsed.nodes ||
+      !Array.isArray(parsed.nodes) ||
+      !parsed.edges ||
+      !Array.isArray(parsed.edges)
+    ) {
+      throw new Error("Invalid diagram structure returned by AI");
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Error editing diagram:", error);
+    throw new Error(
+      `Failed to edit diagram: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );

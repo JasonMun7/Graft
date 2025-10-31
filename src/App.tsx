@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import type { ExtensionMessage } from "./types/messages";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import { generateDiagramFromText } from "./utils/diagramGenerator";
+import { generateDiagramFromText, editDiagramFromPrompt } from "./utils/diagramGenerator";
+import type { DiagramStructure } from "./utils/diagramGenerator";
 import { convertToExcalidrawElements } from "./utils/excalidrawConverter";
 import { AIAPI } from "./utils/aiAPI";
 import { IconHistory, IconCircleDashedPlus } from "@tabler/icons-react";
@@ -34,6 +35,9 @@ function App() {
   >([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [currentDiagramStructure, setCurrentDiagramStructure] =
+    useState<DiagramStructure | null>(null);
 
   // Load history on mount
   useEffect(() => {
@@ -278,6 +282,56 @@ function App() {
     }
   };
 
+  const handleEditDiagram = async (prompt: string) => {
+    if (!prompt.trim() || !currentDiagramStructure || !diagramElements) {
+      setError("Cannot edit: no diagram or prompt provided");
+      return;
+    }
+
+    setIsEditing(true);
+    setError(null);
+
+    try {
+      const updatedStructure = await editDiagramFromPrompt(
+        currentDiagramStructure,
+        prompt,
+        selectedText
+      );
+
+      const elements = convertToExcalidrawElements(updatedStructure);
+      setDiagramElements(elements);
+      setCurrentDiagramStructure(updatedStructure);
+
+      // Update history with edited version
+      const historyEntry = {
+        id: Date.now().toString(),
+        elements,
+        sourceText: selectedText,
+        pageTitle: pageTitle || "Untitled (Edited)",
+        timestamp: Date.now(),
+        summary: summary || null,
+      };
+
+      if (chrome?.storage?.local) {
+        chrome.storage.local.get(["diagramHistory"], (result) => {
+          const existingHistory = result.diagramHistory || [];
+          const newHistory = [historyEntry, ...existingHistory].slice(0, 20);
+          chrome.storage.local.set({ diagramHistory: newHistory }, () => {
+            setHistory(newHistory);
+          });
+        });
+      } else {
+        setHistory((prev) => [historyEntry, ...prev].slice(0, 20));
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to edit diagram";
+      setError(message);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
   const handleGenerateDiagram = async (isAuto = false) => {
     if (!selectedText.trim()) {
       if (!isAuto) setError("Please select some text first");
@@ -297,6 +351,7 @@ function App() {
       );
       const elements = convertToExcalidrawElements(diagramStructure);
       setDiagramElements(elements);
+      setCurrentDiagramStructure(diagramStructure);
       setIsTextCollapsed(true);
 
       const historyEntry = {
@@ -448,6 +503,8 @@ function App() {
             isSummarizing={isSummarizing}
             selectedText={selectedText}
             onSummarize={handleSummarizeDiagram}
+            isEditing={isEditing}
+            onEditDiagram={handleEditDiagram}
           />
         </div>
       </main>
