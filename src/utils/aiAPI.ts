@@ -78,7 +78,6 @@ export class SessionManager {
   closeSession(sessionId: string): void {
     const session = this.sessions.get(sessionId);
     if (session) {
-      // Handle different session types
       if (typeof session.close === "function") {
         session.close();
       } else if (typeof session.destroy === "function") {
@@ -91,7 +90,6 @@ export class SessionManager {
   closeAllSessions(): void {
     this.sessions.forEach((session) => {
       if (session) {
-        // Handle different session types
         if (typeof session.close === "function") {
           session.close();
         } else if (typeof session.destroy === "function") {
@@ -124,7 +122,6 @@ export const AIAPI = {
       context?: string;
     }
   ): Promise<string> {
-    // Default options for summarizer
     const defaultOptions = {
       type: "key-points" as const,
       format: "markdown" as const,
@@ -186,19 +183,10 @@ export const AIAPI = {
     targetLanguage: string = "es"
   ): Promise<void> {
     try {
-      console.log(
-        `Downloading Translator model: ${sourceLanguage} -> ${targetLanguage}`
-      );
-
-      // Create a session to trigger the download
       const sessionId = await sessionManager.createSession("translator", () =>
         Translator.create({ sourceLanguage, targetLanguage })
       );
-
-      // Close the session immediately after creation to trigger download
       sessionManager.closeSession(sessionId);
-
-      console.log("Translator model download initiated");
     } catch (error) {
       throw new AIAPIError(
         "Failed to download Translator model",
@@ -221,8 +209,6 @@ export const AIAPI = {
       const session = sessionManager.getSession(sessionId);
       const result = await session.detect(text);
 
-      // LanguageDetector returns an array of detection results
-      // Get the first (most confident) result
       if (Array.isArray(result) && result.length > 0) {
         return result[0].detectedLanguage || "";
       } else if (typeof result === "string") {
@@ -257,7 +243,6 @@ export const AIAPI = {
       const session = sessionManager.getSession(sessionId);
       const result = await session.detect(text);
 
-      // Return the full array of results with confidence scores
       if (Array.isArray(result)) {
         return result;
       }
@@ -296,7 +281,9 @@ export const AIAPI = {
 
     try {
       const session = sessionManager.getSession(sessionId);
-      const result = await session.prompt(text);
+      const result = await session.prompt(text, {
+        maxOutputTokens: options?.maxOutputTokens,
+      });
       return result;
     } catch (error) {
       sessionManager.closeSession(sessionId);
@@ -307,22 +294,42 @@ export const AIAPI = {
       );
     }
   },
+
+  /**
+   * Warm up the Prompt API (download/instantiate model under a user gesture).
+   * Creates a short-lived session, optionally pings it, and destroys it.
+   */
+  async warmupPrompt(): Promise<void> {
+    if (!navigator.userActivation?.isActive) {
+      throw new UserActivationError("prompt");
+    }
+
+    const status = await LanguageModel.availability();
+    if (status === "unavailable") {
+      throw new APINotAvailableError("prompt", status);
+    }
+
+    const session = await LanguageModel.create();
+    try {
+      await session.prompt("ok");
+    } catch {
+      // ignore output
+    } finally {
+      try {
+        session.destroy?.();
+      } catch {}
+    }
+  },
 };
 
 // Utility functions for common operations
 export const AIUtils = {
-  /**
-   * Check if user activation is required and throw error if not available
-   */
   requireUserActivation(apiName: APIName): void {
     if (!navigator.userActivation?.isActive) {
       throw new UserActivationError(apiName);
     }
   },
 
-  /**
-   * Check API availability and throw error if not available
-   */
   async requireAPIAvailability(
     apiName: APIName | "languageModel"
   ): Promise<void> {
@@ -356,9 +363,6 @@ export const AIUtils = {
     }
   },
 
-  /**
-   * Get human-readable status message
-   */
   getStatusMessage(status: AIAvailabilityStatus): string {
     switch (status) {
       case "available":
@@ -374,9 +378,6 @@ export const AIUtils = {
     }
   },
 
-  /**
-   * Format error message for display
-   */
   formatError(error: Error): string {
     if (error instanceof AIAPIError) {
       return `${error.apiName}: ${error.message}`;
