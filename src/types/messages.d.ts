@@ -64,6 +64,10 @@ export interface GetSelectedTextMessage extends BaseMessage {
   type: "GET_SELECTED_TEXT";
 }
 
+export interface GetPageTextMessage extends BaseMessage {
+  type: "GET_PAGE_TEXT";
+}
+
 export type ExtensionMessage =
   | TextSelectedMessage
   | GenerateDiagramMessage
@@ -71,7 +75,8 @@ export type ExtensionMessage =
   | DiagramErrorMessage
   | DiagramGenerationStartedMessage
   | OpenSidePanelMessage
-  | GetSelectedTextMessage;
+  | GetSelectedTextMessage
+  | GetPageTextMessage;
 
 // Re-export Excalidraw element type for convenience
 export type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";

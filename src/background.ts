@@ -88,6 +88,28 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
+    // Handle get page text request from side panel
+    if ("type" in message && message.type === "GET_PAGE_TEXT") {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            { type: "GET_PAGE_TEXT" } as ExtensionMessage,
+            (response) => {
+              if (chrome.runtime.lastError) {
+                sendResponse({ error: chrome.runtime.lastError.message });
+              } else {
+                sendResponse(response);
+              }
+            }
+          );
+        } else {
+          sendResponse(null);
+        }
+      });
+      return true;
+    }
+
     // Forward other messages
     return false;
   }

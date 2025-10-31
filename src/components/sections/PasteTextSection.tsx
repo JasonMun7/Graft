@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { IconClipboard, IconSparkles } from "@tabler/icons-react";
+import { IconClipboard, IconSparkles, IconWorld } from "@tabler/icons-react";
 
 interface PasteTextSectionProps {
   onTextSubmit: (text: string, title: string) => void;
+  onGenerateFromPage: () => void;
+  isGenerating: boolean;
 }
 
-export default function PasteTextSection({ onTextSubmit }: PasteTextSectionProps) {
+export default function PasteTextSection({
+  onTextSubmit,
+  onGenerateFromPage,
+  isGenerating,
+}: PasteTextSectionProps) {
   const [pastedText, setPastedText] = useState<string>("");
 
   const handleSubmit = () => {
@@ -41,14 +47,25 @@ export default function PasteTextSection({ onTextSubmit }: PasteTextSectionProps
           />
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={!pastedText.trim()}
-          className="w-full px-6 py-3 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
-        >
-          <IconSparkles size={20} aria-hidden="true" />
-          Next
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={!pastedText.trim()}
+            className="flex-1 px-6 py-3 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
+          >
+            <IconSparkles size={20} aria-hidden="true" />
+            Next
+          </button>
+          <button
+            onClick={onGenerateFromPage}
+            disabled={isGenerating}
+            className="px-6 py-3 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-2 to-brand-3 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
+            title="Generate diagram from entire page"
+          >
+            <IconWorld size={20} aria-hidden="true" />
+            {isGenerating ? "Generating..." : "Page"}
+          </button>
+        </div>
       </div>
     </section>
   );

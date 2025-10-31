@@ -10,6 +10,60 @@ interface SelectionData {
   };
 }
 
+// Extract all text content from the page
+function extractPageText(): { text: string; title: string; url: string } {
+  // Get page title
+  const title = document.title || "";
+  const url = window.location.href;
+
+  // Extract text from main content areas, avoiding navigation, ads, etc.
+  const selectors = [
+    "main",
+    "article",
+    "[role='main']",
+    ".content",
+    ".main-content",
+    "body",
+  ];
+
+  let textContent = "";
+
+  // Try to find main content first
+  for (const selector of selectors) {
+    const element = document.querySelector(selector);
+    if (element) {
+      // Clone to avoid modifying original
+      const clone = element.cloneNode(true) as HTMLElement;
+
+      // Remove script, style, and other non-text elements
+      const unwanted = clone.querySelectorAll(
+        "script, style, nav, header, footer, aside, [class*='nav'], [class*='menu'], [class*='ad'], [class*='advertisement']"
+      );
+      unwanted.forEach((el) => el.remove());
+
+      textContent = clone.innerText || clone.textContent || "";
+      if (textContent.trim().length > 100) {
+        break; // Found substantial content
+      }
+    }
+  }
+
+  // Fallback to body if nothing found
+  if (!textContent.trim() || textContent.trim().length < 100) {
+    const bodyClone = document.body.cloneNode(true) as HTMLElement;
+    const unwanted = bodyClone.querySelectorAll(
+      "script, style, nav, header, footer, aside"
+    );
+    unwanted.forEach((el) => el.remove());
+    textContent = bodyClone.innerText || bodyClone.textContent || "";
+  }
+
+  // Clean up: remove extra whitespace, limit length
+  const cleaned = textContent.replace(/\s+/g, " ").trim().substring(0, 50000); // Limit to 50k chars to avoid issues
+
+  return { text: cleaned, title, url };
+}
+
 // Create floating button element
 function createFloatingButton(rect: DOMRect): HTMLElement {
   const button = document.createElement("div");
@@ -243,4 +297,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     sendResponse(selectionData);
     return true;
   }
+
+  if ("type" in message && message.type === "GET_PAGE_TEXT") {
+    const pageData = extractPageText();
+    sendResponse({
+      selectedText: pageData.text,
+      pageTitle: pageData.title,
+      pageUrl: pageData.url,
+    });
+    return true; // Keep channel open for async response
+  }
+
+  if ("type" in message && message.type === "GET_STYLE_PROFILE") {
+    // Feature removed
+    sendResponse({ error: "STYLE_STEAL_REMOVED" });
+    return true;
+  }
+
+  return false;
 });

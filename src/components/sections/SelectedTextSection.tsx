@@ -11,6 +11,7 @@ interface SelectedTextSectionProps {
   pageTitle: string;
   isTextCollapsed: boolean;
   isGenerating: boolean;
+  hasDiagram: boolean;
   onToggleCollapse: () => void;
   onGenerate: () => void;
 }
@@ -20,6 +21,7 @@ export default function SelectedTextSection({
   pageTitle,
   isTextCollapsed,
   isGenerating,
+  hasDiagram,
   onToggleCollapse,
   onGenerate,
 }: SelectedTextSectionProps) {
@@ -72,7 +74,7 @@ export default function SelectedTextSection({
           </div>
         </div>
 
-        {!isTextCollapsed && (
+        {!isTextCollapsed && !hasDiagram && (
           <button
             onClick={onGenerate}
             disabled={isGenerating || !selectedText.trim()}

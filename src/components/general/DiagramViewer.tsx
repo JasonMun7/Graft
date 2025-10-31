@@ -14,16 +14,25 @@ import {
   IconFileTypePng,
   IconFileTypeSvg,
   IconX,
+  IconAlignLeft,
 } from "@tabler/icons-react";
 
 interface DiagramViewerProps {
   elements: ExcalidrawElementType[] | null;
   isLoading?: boolean;
+  summary?: string | null;
+  isSummarizing?: boolean;
+  selectedText?: string;
+  onSummarize?: () => void;
 }
 
 export default function DiagramViewer({
   elements,
   isLoading,
+  summary,
+  isSummarizing,
+  selectedText,
+  onSummarize,
 }: DiagramViewerProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -203,6 +212,20 @@ export default function DiagramViewer({
               <span>Export image</span>
             </div>
           </MainMenu.Item>
+          {elements &&
+            elements.length > 0 &&
+            !summary &&
+            onSummarize &&
+            selectedText?.trim() && (
+              <MainMenu.Item onSelect={onSummarize} disabled={isSummarizing}>
+                <div className="flex items-center gap-2">
+                  <IconAlignLeft size={18} aria-hidden="true" />
+                  <span>
+                    {isSummarizing ? "Summarizing..." : "Summarize Diagram"}
+                  </span>
+                </div>
+              </MainMenu.Item>
+            )}
         </MainMenu>
       </Excalidraw>
 
@@ -237,7 +260,7 @@ export default function DiagramViewer({
             <div className="p-6 space-y-3">
               <button
                 onClick={handleCopyToClipboard}
-                className="w-full px-4 py-3 rounded-lg border border-brand-2/50 bg-gradient-to-br from-brand-1/5 via-brand-2/5 to-brand-3/5 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-brand-2 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group bg-white"
               >
                 <div className="h-10 w-10 rounded-lg border-2 border-dashed border-brand-1/70 flex items-center justify-center text-brand-1 bg-white/80 group-hover:bg-brand-1/10 transition">
                   <IconCopy size={20} aria-hidden="true" />
@@ -252,7 +275,7 @@ export default function DiagramViewer({
 
               <button
                 onClick={handleExportPNG}
-                className="w-full px-4 py-3 rounded-lg border border-brand-2/50 bg-gradient-to-br from-brand-1/5 via-brand-2/5 to-brand-3/5 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-brand-2 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group bg-white"
               >
                 <div className="h-10 w-10 rounded-lg border-2 border-dashed border-brand-2/70 flex items-center justify-center text-brand-2 bg-white/80 group-hover:bg-brand-2/10 transition">
                   <IconFileTypePng size={20} aria-hidden="true" />
@@ -265,7 +288,7 @@ export default function DiagramViewer({
 
               <button
                 onClick={handleExportSVG}
-                className="w-full px-4 py-3 rounded-lg border border-brand-2/50 bg-gradient-to-br from-brand-1/5 via-brand-2/5 to-brand-3/5 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-brand-2 hover:shadow-lg transition-all cursor-pointer flex items-center gap-3 text-left group bg-white"
               >
                 <div className="h-10 w-10 rounded-lg border-2 border-dashed border-brand-3/70 flex items-center justify-center text-brand-3 bg-white/80 group-hover:bg-brand-3/10 transition">
                   <IconFileTypeSvg size={20} aria-hidden="true" />

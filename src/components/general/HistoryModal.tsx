@@ -1,4 +1,9 @@
-import { IconHistory, IconX, IconChartLine, IconArrowForward } from "@tabler/icons-react";
+import {
+  IconHistory,
+  IconX,
+  IconChartLine,
+  IconArrowForward,
+} from "@tabler/icons-react";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 interface HistoryEntry {
@@ -7,6 +12,7 @@ interface HistoryEntry {
   sourceText: string;
   pageTitle: string;
   timestamp: number;
+  summary?: string | null;
 }
 
 interface HistoryModalProps {
@@ -36,7 +42,8 @@ export default function HistoryModal({
             <h2 className="text-xl font-bold text-gray-900">Diagram History</h2>
             {history.length > 0 && (
               <span className="text-sm text-gray-500">
-                ({history.length} {history.length === 1 ? "diagram" : "diagrams"})
+                ({history.length}{" "}
+                {history.length === 1 ? "diagram" : "diagrams"})
               </span>
             )}
           </div>
@@ -69,7 +76,10 @@ export default function HistoryModal({
                   onClick={() => onSelectEntry(entry)}
                   className="text-left p-4 rounded-xl border border-gray-200 hover:border-brand-2 hover:shadow-lg transition-all cursor-pointer bg-white"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="h-10 w-10 shrink-0 rounded-lg border-2 border-dashed border-brand-2/70 flex items-center justify-center text-brand-2 bg-white/80">
+                      <IconChartLine size={20} aria-hidden="true" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate mb-1">
                         {entry.pageTitle}
@@ -83,7 +93,7 @@ export default function HistoryModal({
                     </div>
                     <IconArrowForward
                       size={20}
-                      className="text-brand-2 shrink-0 mt-1"
+                      className="text-brand-2 shrink-0"
                     />
                   </div>
                 </button>
