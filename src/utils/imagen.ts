@@ -4,6 +4,8 @@ import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { pathToFileURL } from "node:url";
 import * as dotenv from "dotenv";
+import { PNG } from "pngjs";
+
 
 dotenv.config();
 
@@ -20,8 +22,10 @@ const MAX_IMAGES = 10;          // ← hard cap
 const MAX_LABEL_WORDS = 6;      // avoid long sentences
 const MAX_LABEL_CHARS = 48;     // avoid paragraphs
 const STYLE_SUFFIX =
-  " icon, simple outline, minimal, monochrome, high-contrast, flat pictogram, centered";
-
+  " icon, simple outline, minimal, monochrome, centered," +
+  " flat pictogram, no shadow, no border," +
+  " on a pure white background (#FFFFFF)," +
+  " no watermark, no logo, no corner marks, no signature, no text";
 /** Which element types count as “boxes” (AABB check) */
 const BOX_TYPES = new Set([
   "rectangle",
@@ -205,6 +209,47 @@ async function imagenGeneratePngB64(
 }
 
 /**
+ * Knock out all near-white pixels (anywhere in the image).
+ * threshold: 0..255 — pixels with R,G,B >= threshold are made fully transparent
+ * feather:   0..60  — softly reduce alpha for pixels close to threshold (optional)
+ */
+function knockOutAllNearWhite(
+  pngBuffer: Buffer,
+  { threshold = 245, feather = 12 }: { threshold?: number; feather?: number } = {},
+): Buffer {
+  // Decode
+  const png = PNG.sync.read(pngBuffer); // {width,height,data}
+  const { data, width, height } = png;
+
+  // Process
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const a = data[i + 3];
+
+    if (r >= threshold && g >= threshold && b >= threshold) {
+      // hard knockout
+      data[i + 3] = 0;
+      // (optional) damp RGB so edge compositing doesn’t ghost
+      data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
+    } else if (feather > 0) {
+      // Gentle fade for almost white: if close to threshold, reduce alpha proportionally
+      const near = threshold - feather; // start of feather band
+      const maxc = Math.max(r, g, b);
+      if (maxc >= near) {
+        const t = (maxc - near) / feather;      // 0..1
+        const newA = Math.max(0, Math.min(255, Math.round(a * (1 - t))));
+        data[i + 3] = newA;
+      }
+    }
+  }
+
+  // Encode explicitly as RGBA
+  const out = new PNG({ width, height, colorType: 6 });
+  out.data = data;
+  return PNG.sync.write(out);
+}
+
+/**
  * MAIN: from Excalidraw -> images
  * Priority:
  *  1) explicit [[img: ...]] prompts
@@ -215,7 +260,7 @@ export async function generateImagesFromExcalidraw(
   excal: ExcalScene
 ): Promise<{ results: GenerateResult[]; image_skeletons: ImageSkeleton[] }> {
   const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
+    apiKey: process.env.GOOGLE_API_KEY
   });
 
   let pairs = extractTaggedPrompts(excal);
@@ -248,15 +293,20 @@ export async function generateImagesFromExcalidraw(
       throw new Error("Returned data is not a valid PNG file.");
     }
 
+    const transparent = knockOutAllNearWhite(buf, {
+      threshold: 245, // try 240–252 depending on your assets
+      feather: 12,    // 0 = no soft edge; 8–16 usually looks nice
+    });
+
     const name = safeFilename(prompt);
     const fpath = path.join(OUTPUT_DIR, `${name}.png`);
-    fs.writeFileSync(fpath, buf);
+    fs.writeFileSync(fpath, transparent);
 
     results.push({
       elementId: el.id,
       prompt,
       file: fpath,
-      dataURL: toDataUrlPng(b64),
+      dataURL: toDataUrlPng(transparent.toString("base64")),
     });
 
     // Place the image near the source text (slight offset down/right)

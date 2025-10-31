@@ -231,7 +231,7 @@ export default function DiagramViewer({
             <div className="flex items-center gap-2">
               {/* reuse any icon you like */}
               <IconGraph size={18} aria-hidden="true" />
-              <span>Generate images from [[img: ...]]</span>
+              <span>Generate supplemental images (30-60sec)</span>
             </div>
           </MainMenu.Item>
 
