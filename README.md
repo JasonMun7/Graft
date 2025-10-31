@@ -81,8 +81,21 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
+<img width="1894" height="925" alt="image" src="https://github.com/user-attachments/assets/69144379-17cb-44ed-b877-9756acd24d87" />
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+The modern web is built on text, but human understanding is visual. Students, researchers, and professionals have to sift through dense articles, reports, and textbooks, trying to connect the dots hidden within paragraphs. The cognitive load is immense. Manually creating diagrams to aid understanding is slow, disruptive, and requires switching to separate design tools, breaking concentration and slowing progress. This not only makes comprehension harder, especially for visual learners or anyone short on time, but also makes communicating ideas harder. Complex concepts get buried in paragraphs when they could be shared more clearly and accurately through visual structure.
+
+Graft is a Chrome extension that turns highlighted text into clear, customizable diagrams directly on the webpage, without switching tools or tabs.
+
+* Highlight any passage and Graft analyzes the structure.
+* Graft sends the selected text plus page context (page title, URL) to the AI for a more accurate and structured output.
+* Graft displays a selection of diagrams to choose from.
+* Users can refine it through natural language commands like “add a step,” “make this cyclical,” or “combine these nodes.”
+* Users can easily export the final diagram as a PNG or SVG for use in presentations, notes, or articles.
+
+Each node in the diagram is linked back to the exact sentence in the source article, so you can hover to trace where every idea came from. This makes complex information not only easier to understand, but also easier to verify and share.
+
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
