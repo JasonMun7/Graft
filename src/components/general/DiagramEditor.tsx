@@ -47,8 +47,7 @@ export default function DiagramEditor({
             type="text"
             value={editPrompt}
             onChange={(e) => setEditPrompt(e.target.value)}
-            placeholder="Describe changes using natural language — add, remove, or modify
-          nodes and connections"
+            placeholder="Describe changes using natural language — add, remove, or modify nodes and connections"
             disabled={isEditing}
             className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-brand-2 focus:ring-2 focus:ring-brand-2/20 outline-none transition disabled:bg-gray-50 disabled:cursor-not-allowed text-sm"
           />
