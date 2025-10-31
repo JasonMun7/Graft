@@ -134,12 +134,66 @@ export default function DiagramViewer({
       });
       if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
 
-      const { files, image_skeletons } = await res.json();
+      const { files, image_skeletons, box_updates } = await res.json();
 
+      // 1) Attach generated files (images) to Excalidraw
       if (files && typeof api.addFiles === "function") {
         api.addFiles(files);
       }
 
+      // 2) Apply box height expansions (if any)
+      // 2) Apply box height expansions (if any)
+  if (Array.isArray(box_updates) && box_updates.length > 0) {
+    // Accumulate per-box height growth
+    const byId: Record<string, number> = {};
+    for (const u of box_updates) {
+      if (u?.id && typeof u.height === "number" && u.height > 0) {
+        byId[u.id] = Math.max(byId[u.id] || 0, u.height);
+      }
+    }
+
+    if (Object.keys(byId).length > 0) {
+      const curr = api.getSceneElements();
+
+      // First pass: resize boxes and mark which ones changed
+      const resizedIds = new Set<string>();
+      const pass1 = curr.map((el: any) => {
+        const grow = byId[el.id];
+        if (!grow) return el;
+
+        resizedIds.add(el.id);
+        return {
+          ...el,
+          height: (el.height ?? 0) + grow,
+          // Bump version to trigger bindings recomputation
+          version: (el.version ?? 0) + 1,
+          versionNonce: Math.floor(Math.random() * 2 ** 31),
+        };
+      });
+
+      // Second pass: bump arrows bound to resized boxes so they recompute endpoints
+      const pass2 = pass1.map((el: any) => {
+        if (el.type !== "arrow") return el;
+
+        const startId = el.startBinding?.elementId;
+        const endId = el.endBinding?.elementId;
+        if ((startId && resizedIds.has(startId)) || (endId && resizedIds.has(endId))) {
+          return {
+            ...el,
+            version: (el.version ?? 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2 ** 31),
+            // Do NOT touch points; Excalidraw recalculates them from bindings.
+          };
+        }
+        return el;
+      });
+
+      api.updateScene({ elements: pass2 });
+    }
+  }
+
+
+      // 3) Add the new image elements
       const newImageEls =
         (image_skeletons || []).map((s: any) => ({
           id: crypto.randomUUID(),
@@ -167,6 +221,7 @@ export default function DiagramViewer({
       alert(`Generation failed: ${e?.message || e}`);
     }
   };
+
 
   if (isLoading) {
     return (
