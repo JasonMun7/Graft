@@ -23,7 +23,6 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT license][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -105,20 +104,11 @@
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
 ### Prerequisites
-
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
 
 ### Installation
 
-1. Get a free API Key at [https://example.com](https://example.com)
+1. Get a Gemini API Key from [Google AI Studio](https://aistudio.google.com/api-keys?_gl=1*1qqknxg*_ga*MTQyNzQ5MjEyMS4xNzYxNDQ0NTk4*_ga_P1DBVKWT6V*czE3NjE5Mzg1NjEkbzIkZzEkdDE3NjE5Mzg1OTEkajMwJGwwJGgxNzQ0Njk5Nzcz) if you want to use the image generation feature
 2. Clone the repo
    ```sh
    git clone https://github.com/JasonMun7/Graft.git
@@ -127,15 +117,17 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    npm install
    ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
+4. Create a `.env` file at the root and enter your API key
    ```
-5. Change git remote url to avoid accidental pushes to base project
+   GEMINI_API_KEY = "ENTER YOUR API"
+   ```
+5. Build the extension
    ```sh
-   git remote set-url origin JasonMun7/Graft
-   git remote -v # confirm the changes
+   npm run build
    ```
+6. Make sure the Prompt API flags are enabled at chrome://flags
+7. Enable 'Developer mode' at chrome://extensions/
+9. Click 'Load unpacked' and select the `dist` directory that was created.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -143,11 +135,6 @@ This is an example of how to list things you need to use the software and how to
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -202,7 +189,10 @@ Distributed under the MIT license. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
+* Jason Mun - jason.mun484@gmail.com - https://www.linkedin.com/in/jason-mun-25181b1b9/
+* Andrew Cheung - andrewcheung360@gmail.com - https://www.linkedin.com/in/andrewcheung360/
+* Justin Chung - justinjjhchung@gmail.com - https://www.linkedin.com/in/justinjjhchung/
+
 
 Project Link: [https://github.com/JasonMun7/Graft](https://github.com/JasonMun7/Graft)
 
@@ -213,9 +203,9 @@ Project Link: [https://github.com/JasonMun7/Graft](https://github.com/JasonMun7/
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* []()
-* []()
-* []()
+* [Excalidraw](https://docs.excalidraw.com/)
+* [Chrome for Developers](https://developer.chrome.com/docs)
+* [Gemini API](https://ai.google.dev/gemini-api/docs)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
