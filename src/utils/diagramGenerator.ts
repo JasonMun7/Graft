@@ -46,15 +46,10 @@ CRITICAL Guidelines:
 - Focus on clarity and usefulness: the diagram should HELP someone understand the text better
 - Extract 3-8 key concepts (not too many, not too few)
 - Use meaningful, descriptive labels (10-25 characters is ideal)
-- If the text describes a PROCESS: create a left-to-right flow showing steps
-- If the text describes COMPARISON: create parallel nodes with labeled connections
-- If the text describes a HIERARCHY: arrange nodes vertically (top = main concept)
 - If the text describes RELATIONSHIPS: show connections with descriptive edge labels
-- Position nodes with at least 250px spacing between them
 - Use simple, clear edge labels that explain the relationship (e.g., "causes", "leads to", "includes", "differs from")
 - If the text lists items: group related items and show their relationships
-
-Return ONLY the JSON object, nothing else. Make it a useful visual summary that actually explains the text.`;
+`;
 }
 
 /**
@@ -70,7 +65,7 @@ export async function generateDiagramFromText(
   try {
     const response = await AIAPI.prompt(prompt, {
       maxOutputTokens: 2000,
-      temperature: 0.7,
+      temperature: 0.3,
     });
 
     // Try to extract JSON from the response

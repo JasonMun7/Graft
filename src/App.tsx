@@ -156,7 +156,7 @@ function App() {
         setHistory((prev) => [historyEntry, ...prev].slice(0, 20));
       }
 
-      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+      if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.runtime?.sendMessage) {
         chrome.runtime.sendMessage({
           type: "DIAGRAM_GENERATED",
           data: { elements, sourceText: selectedText },
@@ -166,7 +166,7 @@ function App() {
       const message =
         err instanceof Error ? err.message : "Failed to generate diagram";
       setError(isAuto ? `Click Generate to continue: ${message}` : message);
-      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+      if (typeof chrome !== "undefined" && chrome.runtime?.id && chrome.runtime?.sendMessage) {
         chrome.runtime.sendMessage({
           type: "DIAGRAM_ERROR",
           data: { error: message, sourceText: selectedText },

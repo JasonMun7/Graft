@@ -47,7 +47,7 @@ export default function PasteTextSection({ onTextSubmit }: PasteTextSectionProps
           className="w-full px-6 py-3 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
         >
           <IconSparkles size={20} aria-hidden="true" />
-          Generate Diagram
+          Next
         </button>
       </div>
     </section>
