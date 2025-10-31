@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+:root {
+  --brand-1: #5433ff;
+  --brand-2: #4379ff;
+  --brand-3: #1cc6ff;
+  --brand-4: #97fbd1;
+  --brand-5: #f6a4ec;
+}
+
+@theme {
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
+  --color-brand-4: var(--brand-4);
+  --color-brand-5: var(--brand-5);
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* Excalidraw customization to match design system */
+.graft-excalidraw .excalidraw {
+  --color-primary: #4379ff;
+  --color-primary-darker: #5433ff;
+  --color-primary-darkest: #5433ff;
+  --color-primary-light: #1cc6ff;
+  --color-primary-contrast-offset: #4379ff;
+  /* Selection/highlight colors */
+  --color-selection-element-background: rgba(67, 121, 255, 0.1);
+  --color-selection-element-border: #4379ff;
+  --selection-color: rgba(67, 121, 255, 0.1);
+  --selection-color-full: rgba(67, 121, 255, 0.2);
+}
+
+.graft-excalidraw .excalidraw.theme--dark {
+  --color-primary: #1cc6ff;
+  --color-primary-darker: #4379ff;
+  --color-primary-darkest: #5433ff;
+  --color-primary-light: #97fbd1;
+  --color-primary-contrast-offset: #1cc6ff;
+  /* Selection/highlight colors for dark mode */
+  --color-selection-element-background: rgba(28, 198, 255, 0.1);
+  --color-selection-element-border: #1cc6ff;
+  --selection-color: rgba(28, 198, 255, 0.1);
+  --selection-color-full: rgba(28, 198, 255, 0.2);
+}
