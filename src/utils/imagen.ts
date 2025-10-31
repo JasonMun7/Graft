@@ -15,11 +15,23 @@ const ASPECT_RATIO: "1:1" | "3:4" | "4:3" | "9:16" | "16:9" = "1:1";
 const OUTPUT_DIR = path.resolve("gen_images");
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-/** Inference heuristics for text→icon */
-const MAX_LABEL_WORDS = 6;      // skip big sentences
-const MAX_LABEL_CHARS = 48;     // skip paragraphs
+/** Limits & heuristics */
+const MAX_IMAGES = 10;          // ← hard cap
+const MAX_LABEL_WORDS = 6;      // avoid long sentences
+const MAX_LABEL_CHARS = 48;     // avoid paragraphs
 const STYLE_SUFFIX =
   " icon, simple outline, minimal, monochrome, high-contrast, flat pictogram, centered";
+
+/** Which element types count as “boxes” (AABB check) */
+const BOX_TYPES = new Set([
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "round-rectangle",
+  "roundRect",
+  "rounded-rectangle",
+  "frame", // optional; include if you want text-in-frame to count
+]);
 
 /**
  * HELPERS
@@ -58,6 +70,7 @@ type ExcalElement = {
   y?: number;
   width?: number;
   height?: number;
+  angle?: number;
 };
 
 type ExcalScene = {
@@ -105,31 +118,56 @@ function extractTaggedPrompts(
 }
 
 /**
- * Infer prompts from short text labels (when no tags are present)
- * e.g., "Calendar" => "calendar icon, simple outline, minimal ..."
+ * Geometry util: is a point inside an element’s axis-aligned bounding box?
  */
-function inferPromptsFromLabels(
+function pointInAABB(
+  px: number,
+  py: number,
+  el: Pick<ExcalElement, "x" | "y" | "width" | "height">
+) {
+  const x = el.x ?? 0;
+  const y = el.y ?? 0;
+  const w = el.width ?? 0;
+  const h = el.height ?? 0;
+  return px >= x && px <= x + w && py >= y && py <= y + h;
+}
+
+/**
+ * Collect text whose CENTER lies inside any “box-like” shape.
+ * (Ignores arrows/lines by design. Only text-in-box gets considered.)
+ */
+function inferPromptsFromBoxText(
   excal: ExcalScene
 ): Array<{ el: ExcalElement; prompt: string }> {
   const elements = excal?.elements || [];
-  const out: Array<{ el: ExcalElement; prompt: string }> = [];
+  const boxes = elements.filter((e) => BOX_TYPES.has((e.type || "").toLowerCase()));
 
+  const out: Array<{ el: ExcalElement; prompt: string }> = [];
   const seen = new Set<string>();
+
   for (const el of elements) {
     if (el.type !== "text" || typeof el.text !== "string") continue;
 
     const raw = normText(el.text);
     if (!raw) continue;
+    if (IMG_TAG_RE.test(raw)) continue; // explicit tags handled elsewhere
 
-    // skip anything that already contains [[img:
-    if (IMG_TAG_RE.test(raw)) continue;
-
-    // basic heuristics to avoid paragraphs
+    // basic heuristics
     if (raw.length > MAX_LABEL_CHARS) continue;
     const words = raw.split(/\s+/);
     if (words.length === 0 || words.length > MAX_LABEL_WORDS) continue;
 
-    // normalize prompt text (lowercase single-word labels, keep multi-word case sane)
+    // must be inside at least one “box”
+    const tx = el.x ?? 0;
+    const ty = el.y ?? 0;
+    const tw = el.width ?? 0;
+    const th = el.height ?? 0;
+    const cx = tx + tw / 2;
+    const cy = ty + th / 2;
+
+    const insideABox = boxes.some((b) => pointInAABB(cx, cy, b));
+    if (!insideABox) continue;
+
     const base = raw.trim();
     const prompt = `${base} ${STYLE_SUFFIX}`.trim();
 
@@ -167,7 +205,11 @@ async function imagenGeneratePngB64(
 }
 
 /**
- * MAIN: from Excalidraw -> images (tags first; else infer from labels)
+ * MAIN: from Excalidraw -> images
+ * Priority:
+ *  1) explicit [[img: ...]] prompts
+ *  2) otherwise, infer from text INSIDE box-like shapes only
+ * Also capped to MAX_IMAGES total.
  */
 export async function generateImagesFromExcalidraw(
   excal: ExcalScene
@@ -178,15 +220,20 @@ export async function generateImagesFromExcalidraw(
 
   let pairs = extractTaggedPrompts(excal);
   if (pairs.length === 0) {
-    pairs = inferPromptsFromLabels(excal);
+    pairs = inferPromptsFromBoxText(excal);
     if (pairs.length === 0) {
-      console.log("No suitable text labels found to infer image prompts.");
+      console.log("No suitable box-contained text found to infer image prompts.");
       return { results: [], image_skeletons: [] };
     } else {
-      console.log(`Inferred ${pairs.length} image prompt(s) from text labels.`);
+      console.log(`Inferred ${pairs.length} prompt(s) from text inside boxes.`);
     }
   } else {
     console.log(`Found ${pairs.length} explicit [[img: ...]] prompt(s).`);
+  }
+
+  // hard limit
+  if (pairs.length > MAX_IMAGES) {
+    pairs = pairs.slice(0, MAX_IMAGES);
   }
 
   const results: GenerateResult[] = [];
@@ -237,11 +284,10 @@ const EXCALIDRAW_CONTEXT: ExcalScene = {
   version: 2,
   source: "excalidraw",
   elements: [
-    // Try both styles:
-    { type: "text", id: "t1", x: 100, y: 80, text: "[[img: bar chart icon minimal]]" },
-    { type: "text", id: "t2", x: 350, y: 120, text: "Calendar" },
-    { type: "text", id: "t3", x: 600, y: 160, text: "Graduation cap" },
-    { type: "rectangle", x: 80, y: 200, width: 200, height: 100 },
+    { type: "text", id: "t-box", x: 120, y: 110, width: 80, height: 20, text: "Calendar" },
+    { type: "rectangle", id: "r1", x: 100, y: 100, width: 160, height: 80 },
+    { type: "arrow", id: "a1", x: 300, y: 140, width: 120, height: 0 }, // ignored
+    { type: "text", id: "t-free", x: 450, y: 160, width: 100, height: 20, text: "Floating label" }, // not inside a box → ignored
   ],
   appState: { viewBackgroundColor: "#ffffff" },
 };
