@@ -1,21 +1,16 @@
 import { useState, useEffect } from "react";
-import DiagramViewer from "./components/DiagramViewer";
 import type { ExtensionMessage } from "./types/messages";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { generateDiagramFromText } from "./utils/diagramGenerator";
 import { convertToExcalidrawElements } from "./utils/excalidrawConverter";
 import { AIAPI } from "./utils/aiAPI";
-import {
-  IconArrowForward,
-  IconArticle,
-  IconSparkles,
-  IconChartLine,
-  IconHistory,
-  IconX,
-  IconAlignLeft,
-  IconArrowsDiagonal,
-  IconArrowsDiagonalMinimize2,
-} from "@tabler/icons-react";
+import { IconHistory } from "@tabler/icons-react";
+import PasteTextSection from "./components/sections/PasteTextSection";
+import SelectedTextSection from "./components/sections/SelectedTextSection";
+import EmptyState from "./components/general/EmptyState";
+import ErrorSection from "./components/sections/ErrorSection";
+import DiagramSection from "./components/sections/DiagramSection";
+import HistoryModal from "./components/general/HistoryModal";
 
 function App() {
   const [selectedText, setSelectedText] = useState<string>("");
@@ -59,26 +54,40 @@ function App() {
         setPageTitle(data.pageTitle);
         setPageUrl(data.pageUrl);
         setError(null);
-        setSummary(null); // Clear summary when new text is selected
+        setSummary(null);
       }
     };
 
-    chrome.runtime.onMessage.addListener(handleMessage);
-    chrome.runtime
-      .sendMessage({ type: "GET_SELECTED_TEXT" } as any)
-      .then((data: any) => {
-        if (data) {
-          setSelectedText(data.selectedText);
-          setPageTitle(data.pageTitle);
-          setPageUrl(data.pageUrl);
-        }
-      })
-      .catch(() => {});
+    if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(handleMessage);
+      chrome.runtime
+        .sendMessage({ type: "GET_SELECTED_TEXT" } as any)
+        .then((data: any) => {
+          if (data) {
+            setSelectedText(data.selectedText);
+            setPageTitle(data.pageTitle);
+            setPageUrl(data.pageUrl);
+          }
+        })
+        .catch(() => {});
 
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
-    };
+      return () => {
+        chrome.runtime.onMessage.removeListener(handleMessage);
+      };
+    } else {
+      console.log(
+        "Chrome extension APIs not available. Running in development mode."
+      );
+    }
   }, []);
+
+  const handlePastedTextSubmit = (text: string, title: string) => {
+    setSelectedText(text);
+    setPageTitle(title);
+    setPageUrl("");
+    setError(null);
+    setSummary(null);
+  };
 
   const handleSummarizeDiagram = async () => {
     if (!selectedText.trim()) {
@@ -115,10 +124,9 @@ function App() {
     setIsGenerating(true);
     setError(null);
     setDiagramElements(null);
-    setSummary(null); // Clear previous summary when generating new diagram
+    setSummary(null);
 
     try {
-      // Original logic: directly generate and convert
       const diagramStructure = await generateDiagramFromText(
         selectedText,
         pageTitle,
@@ -126,11 +134,8 @@ function App() {
       );
       const elements = convertToExcalidrawElements(diagramStructure);
       setDiagramElements(elements);
-
-      // Auto-collapse text section after successful generation
       setIsTextCollapsed(true);
 
-      // Save to history
       const historyEntry = {
         id: Date.now().toString(),
         elements,
@@ -142,31 +147,42 @@ function App() {
       if (chrome?.storage?.local) {
         chrome.storage.local.get(["diagramHistory"], (result) => {
           const existingHistory = result.diagramHistory || [];
-          const newHistory = [historyEntry, ...existingHistory].slice(0, 20); // Keep last 20
+          const newHistory = [historyEntry, ...existingHistory].slice(0, 20);
           chrome.storage.local.set({ diagramHistory: newHistory }, () => {
             setHistory(newHistory);
           });
         });
       } else {
-        // Fallback: just update state if storage not available
         setHistory((prev) => [historyEntry, ...prev].slice(0, 20));
       }
 
-      chrome.runtime.sendMessage({
-        type: "DIAGRAM_GENERATED",
-        data: { elements, sourceText: selectedText },
-      } as ExtensionMessage);
+      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: "DIAGRAM_GENERATED",
+          data: { elements, sourceText: selectedText },
+        } as ExtensionMessage);
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to generate diagram";
       setError(isAuto ? `Click Generate to continue: ${message}` : message);
-      chrome.runtime.sendMessage({
-        type: "DIAGRAM_ERROR",
-        data: { error: message, sourceText: selectedText },
-      } as ExtensionMessage);
+      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: "DIAGRAM_ERROR",
+          data: { error: message, sourceText: selectedText },
+        } as ExtensionMessage);
+      }
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleHistoryEntrySelect = (entry: typeof history[0]) => {
+    setDiagramElements(entry.elements);
+    setSelectedText(entry.sourceText);
+    setPageTitle(entry.pageTitle);
+    setIsTextCollapsed(true);
+    setIsHistoryOpen(false);
   };
 
   return (
@@ -208,227 +224,46 @@ function App() {
         <div className="mx-auto max-w-5xl space-y-6">
           {/* Selected Text */}
           {selectedText && (
-            <section className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-xl">
-              <div className="p-6 space-y-4">
-                {/* Header with page title and collapse button */}
-                <div className="flex items-center justify-between">
-                  {pageTitle && (
-                    <div className="flex items-center gap-2 text-sm text-brand-2">
-                      <IconArticle size={16} aria-hidden="true" />
-                      <span>{pageTitle}</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setIsTextCollapsed(!isTextCollapsed)}
-                    className="p-2 rounded-lg hover:scale-105 duration-500 transition-all cursor-pointer flex items-center justify-center text-brand-2 hover:text-brand-1"
-                    aria-label={
-                      isTextCollapsed ? "Expand text" : "Collapse text"
-                    }
-                  >
-                    {isTextCollapsed ? (
-                      <IconArrowsDiagonal size={18} aria-hidden="true" />
-                    ) : (
-                      <IconArrowsDiagonalMinimize2
-                        size={18}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                </div>
-
-                {/* Collapsible text section */}
-                <div className="flex items-start gap-3">
-                  <button
-                    className="h-9 w-9 shrink-0 rounded-md border-2 border-dashed border-brand-1/70 flex items-center justify-center text-brand-1 bg-white/80"
-                    aria-label="Text section"
-                    disabled
-                  >
-                    <IconArrowForward size={18} aria-hidden="true" />
-                  </button>
-
-                  <div className="flex-1 rounded-md border-2 border-dashed border-brand-2/70 bg-white/80 px-3 py-2 overflow-hidden">
-                    {isTextCollapsed ? (
-                      <p className="leading-relaxed text-gray-900 truncate">
-                        {selectedText}
-                      </p>
-                    ) : (
-                      <div className="max-h-40 overflow-auto">
-                        <p className="leading-relaxed whitespace-pre-wrap text-gray-900">
-                          {selectedText}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {!isTextCollapsed && (
-                  <button
-                    onClick={() => handleGenerateDiagram(false)}
-                    disabled={isGenerating || !selectedText.trim()}
-                    className="w-full px-6 py-3 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
-                  >
-                    <IconSparkles size={20} aria-hidden="true" />
-                    {isGenerating ? "Generating..." : "Generate Diagram"}
-                  </button>
-                )}
-              </div>
-            </section>
+            <SelectedTextSection
+              selectedText={selectedText}
+              pageTitle={pageTitle}
+              isTextCollapsed={isTextCollapsed}
+              isGenerating={isGenerating}
+              onToggleCollapse={() => setIsTextCollapsed(!isTextCollapsed)}
+              onGenerate={() => handleGenerateDiagram(false)}
+            />
           )}
 
-          {/* Empty state - only show when no text selected */}
+          {/* Empty state and Paste - only show when no text selected */}
           {!selectedText && (
-            <section className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-xl">
-              <div className="p-12">
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="h-16 w-16 rounded-xl border-2 border-dashed border-brand-2/70 flex items-center justify-center text-brand-2 bg-white/80 mb-4">
-                    <IconChartLine size={32} aria-hidden="true" />
-                  </div>
-                  <p className="text-lg font-semibold text-gray-800 mb-2">
-                    No diagram yet
-                  </p>
-                  <p className="text-sm text-gray-600 max-w-md">
-                    Select text on a webpage and generate a diagram to get
-                    started
-                  </p>
-                </div>
-              </div>
-            </section>
+            <>
+              <EmptyState />
+              <PasteTextSection onTextSubmit={handlePastedTextSubmit} />
+            </>
           )}
 
-          {error && selectedText && (
-            <section className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-xl">
-              <div className="p-6">
-                <div className="p-3 rounded-md border border-brand-5/60 bg-brand-5/15">
-                  <p className="text-brand-1 text-sm">{error}</p>
-                </div>
-              </div>
-            </section>
-          )}
+          {/* Error */}
+          {error && selectedText && <ErrorSection error={error} />}
 
           {/* Diagram */}
-          <section className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-xl">
-            <div className="p-4 space-y-4">
-              {diagramElements && diagramElements.length > 0 && !summary && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleSummarizeDiagram}
-                    disabled={isSummarizing || !selectedText.trim()}
-                    className="px-4 py-2 rounded-lg shadow-md text-white bg-gradient-to-r from-brand-2 to-brand-3 hover:opacity-95 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 text-sm font-semibold"
-                  >
-                    <IconAlignLeft size={18} aria-hidden="true" />
-                    {isSummarizing ? "Summarizing..." : "Summarize Diagram"}
-                  </button>
-                </div>
-              )}
-
-              {summary && (
-                <div className="p-4 rounded-lg border border-brand-2/50 bg-gradient-to-br from-brand-1/5 via-brand-2/5 to-brand-3/5">
-                  <h3 className="text-sm font-semibold text-brand-2 mb-2">
-                    Diagram Summary
-                  </h3>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {summary}
-                  </div>
-                </div>
-              )}
-
-              <div className="h-[600px] rounded-lg bg-white">
-                <DiagramViewer
-                  elements={diagramElements}
-                  isLoading={isGenerating}
-                />
-              </div>
-            </div>
-          </section>
+          <DiagramSection
+            diagramElements={diagramElements}
+            summary={summary}
+            isGenerating={isGenerating}
+            isSummarizing={isSummarizing}
+            selectedText={selectedText}
+            onSummarize={handleSummarizeDiagram}
+          />
         </div>
       </main>
 
       {/* History Modal */}
       {isHistoryOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
-          onClick={() => setIsHistoryOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <IconHistory size={24} className="text-brand-2" />
-                <h2 className="text-xl font-bold text-gray-900">
-                  Diagram History
-                </h2>
-                {history.length > 0 && (
-                  <span className="text-sm text-gray-500">
-                    ({history.length}{" "}
-                    {history.length === 1 ? "diagram" : "diagrams"})
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setIsHistoryOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-lg transition-all cursor-pointer"
-                aria-label="Close history"
-              >
-                <IconX size={20} className="text-gray-600" />
-              </button>
-            </div>
-
-            {/* History Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {history.length === 0 ? (
-                <div className="text-center py-12">
-                  <IconChartLine
-                    size={48}
-                    className="mx-auto text-gray-400 mb-4"
-                  />
-                  <p className="text-gray-600 font-medium mb-2">
-                    No diagrams in history
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Generate a diagram to see it here
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {history.map((entry) => (
-                    <button
-                      key={entry.id}
-                      onClick={() => {
-                        setDiagramElements(entry.elements);
-                        setSelectedText(entry.sourceText);
-                        setPageTitle(entry.pageTitle);
-                        setIsTextCollapsed(true);
-                        setIsHistoryOpen(false);
-                      }}
-                      className="text-left p-4 rounded-xl border border-gray-200 hover:border-brand-2 hover:shadow-lg transition-all cursor-pointer bg-white"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate mb-1">
-                            {entry.pageTitle}
-                          </p>
-                          <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-                            {entry.sourceText.substring(0, 100)}...
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(entry.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                        <IconArrowForward
-                          size={20}
-                          className="text-brand-2 shrink-0 mt-1"
-                        />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <HistoryModal
+          history={history}
+          onClose={() => setIsHistoryOpen(false)}
+          onSelectEntry={handleHistoryEntrySelect}
+        />
       )}
     </div>
   );
