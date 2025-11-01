@@ -124,7 +124,7 @@ This makes complex information not only easier to understand, but also easier to
    ```
 4. Create a `.env` file at the root and enter your API key
    ```
-   GOOGLE_API_KEY = "ENTER YOUR API"
+   GOOGLE_API_KEY = "ENTER YOUR API KEY"
    ```
 5. Build the extension
    ```sh
