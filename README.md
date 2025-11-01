@@ -41,7 +41,7 @@
     <a href="https://github.com/JasonMun7/Graft"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/JasonMun7/Graft">View Demo</a>
+    <a href="https://devpost.com/software/graft">View Demo</a>
     &middot;
     <a href="https://github.com/JasonMun7/Graft/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
