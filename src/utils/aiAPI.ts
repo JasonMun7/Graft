@@ -326,7 +326,7 @@ export const AIAPI = {
     text: string,
     options?: {
       sharedContext?: string;
-      tone?: "more-formal" | "less-formal" | "more-casual";
+      tone?: "more-formal" | "less-formal";
       format?: "plain-text" | "markdown";
       length?: "shorter" | "longer";
     }

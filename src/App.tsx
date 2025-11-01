@@ -16,6 +16,7 @@ import {
   IconArrowsDiagonal,
   IconArrowsDiagonalMinimize2,
 } from "@tabler/icons-react";
+import BuiltInAITest from "./components/BuiltInAITest";
 
 function App() {
   const [selectedText, setSelectedText] = useState<string>("");
@@ -73,7 +74,7 @@ function App() {
           setPageUrl(data.pageUrl);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       chrome.runtime.onMessage.removeListener(handleMessage);
@@ -112,28 +113,72 @@ function App() {
       return;
     }
 
+    // Check for Chrome Built-in AI user activation
+    if (!navigator.userActivation?.isActive) {
+      setError("User activation required. Please click the button again to activate AI APIs.");
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setDiagramElements(null);
-    setSummary(null); // Clear previous summary when generating new diagram
+    setSummary(null);
 
     try {
-      // Original logic: directly generate and convert
-      const diagramStructure = await generateDiagramFromText(
-        selectedText,
-        pageTitle,
-        pageUrl
-      );
-      const elements = convertToExcalidrawElements(diagramStructure);
-      setDiagramElements(elements);
+      // generate diff versions
+      const rewriteOptions = [
+        { tone: "more-formal", length: "longer", format: "plain-text", outputLanguage: "en" }, // more detailed text
+        { tone: "less-formal", length: "shorter", format: "plain-text", outputLanguage: "en" }, // less detailed test
+      ] as const;
 
-      // Auto-collapse text section after successful generation
+      const [formalResult, casualResult] = await Promise.all(
+        rewriteOptions.map(async (opts) => {
+          try {
+            const result = await AIAPI.rewriter(selectedText, opts);
+            return result;
+          } catch (error) {
+            console.log("Rewriter failed for options:", opts, error);
+            throw new Error("Rewriter API failed — please ensure built-in AI is available.");
+          }
+        })
+      );
+
+      const versions = [
+        { label: "Original", text: selectedText },
+        { label: "More Formal", text: formalResult },
+        { label: "Less Formal", text: casualResult },
+      ];
+
+      // call generate diagram for each version
+      const diagramResults = await Promise.all(
+        versions.map(async (version) => {
+          try {
+            const structure = await generateDiagramFromText(
+              version.text,
+              `${pageTitle || "Untitled"} (${version.label})`,
+              pageUrl
+            );
+            return {
+              label: version.label,
+              structure,
+              elements: convertToExcalidrawElements(structure),
+            };
+          } catch (error) {
+            console.error(`Diagram generation failed for ${version.label}:`, error);
+            throw new Error(`Failed to generate diagram for ${version.label}.`);
+          }
+        })
+      );
+
+      // combine outputs
+      const combinedElements = diagramResults.flatMap((r) => r.elements);
+      setDiagramElements(combinedElements);
       setIsTextCollapsed(true);
 
-      // Save to history
+      // history
       const historyEntry = {
         id: Date.now().toString(),
-        elements,
+        elements: combinedElements,
         sourceText: selectedText,
         pageTitle: pageTitle || "Untitled",
         timestamp: Date.now(),
@@ -142,24 +187,26 @@ function App() {
       if (chrome?.storage?.local) {
         chrome.storage.local.get(["diagramHistory"], (result) => {
           const existingHistory = result.diagramHistory || [];
-          const newHistory = [historyEntry, ...existingHistory].slice(0, 20); // Keep last 20
+          const newHistory = [historyEntry, ...existingHistory].slice(0, 20);
           chrome.storage.local.set({ diagramHistory: newHistory }, () => {
             setHistory(newHistory);
           });
         });
       } else {
-        // Fallback: just update state if storage not available
         setHistory((prev) => [historyEntry, ...prev].slice(0, 20));
       }
 
       chrome.runtime.sendMessage({
         type: "DIAGRAM_GENERATED",
-        data: { elements, sourceText: selectedText },
+        data: { elements: combinedElements, sourceText: selectedText },
       } as ExtensionMessage);
-    } catch (err) {
+
+    } catch (error) {
+      console.error("Error in handleGenerateDiagram:", error);
       const message =
-        err instanceof Error ? err.message : "Failed to generate diagram";
+        error instanceof Error ? error.message : "Failed to generate diagrams.";
       setError(isAuto ? `Click Generate to continue: ${message}` : message);
+
       chrome.runtime.sendMessage({
         type: "DIAGRAM_ERROR",
         data: { error: message, sourceText: selectedText },
@@ -203,6 +250,7 @@ function App() {
         </div>
       </header>
 
+      <BuiltInAITest />
       {/* Content */}
       <main className="p-6 pb-6">
         <div className="mx-auto max-w-5xl space-y-6">

@@ -147,7 +147,7 @@ const BuiltInAITest: React.FC = () => {
     // Language Detector options
     showConfidence: false,
     // Rewriter options
-    tone: "more-formal" as "more-formal" | "less-formal" | "more-casual",
+    tone: "more-formal" as "more-formal" | "less-formal",
     format: "plain-text" as "plain-text" | "markdown",
     length: "shorter" as "shorter" | "longer",
   });
@@ -746,7 +746,7 @@ const BuiltInAITest: React.FC = () => {
                       onChange={(e) =>
                         setOptions((prev) => ({
                           ...prev,
-                          tone: e.target.value as "more-formal" | "less-formal" | "more-casual",
+                          tone: e.target.value as "more-formal" | "less-formal",
                         }))
                       }
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
